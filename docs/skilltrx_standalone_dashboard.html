@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Skilltrx — Explainable & Fairness-Aware Inclusive ATS Dashboard</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+</head>
+<body class="bg-[var(--background)] text-[var(--foreground)] antialiased p-4 md:p-6 m-0">
+
+  <!-- Top Header -->
+  <div class="max-w-7xl mx-auto space-y-5">
+    <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 md:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2.5 flex-wrap">
+          <span class="px-2.5 py-0.5 text-xs font-mono font-semibold rounded-full bg-[var(--primary)] text-[var(--primary-foreground)]">PCCCS582 · NNDL</span>
+          <span class="px-2.5 py-0.5 text-xs font-mono rounded-full border border-[var(--border)] text-[var(--muted-foreground)]">all-MiniLM-L6-v2 (22.9M params)</span>
+          <span class="px-2.5 py-0.5 text-xs font-mono rounded-full border border-[var(--border)] text-[var(--muted-foreground)]">PyTorch 2.14 · Seed 42</span>
+        </div>
+        <h1 class="text-xl md:text-2xl font-bold mt-2 tracking-tight">Skilltrx — Inclusive ATS & Evaluation Dashboard</h1>
+        <p class="text-xs text-[var(--muted-foreground)] mt-0.5">
+          Explainable & Fairness-Aware Semantic Resume–Job Matching System · Shared-Weight Chunked SBERT Bi-Encoder + Requirement Evidence Layer
+        </p>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center shrink-0">
+        <div class="bg-[var(--background)] border border-[var(--card-border)] rounded-lg px-3 py-2">
+          <div class="text-xs text-[var(--muted-foreground)]">Test Macro F1</div>
+          <div class="text-base font-bold font-mono text-[var(--success)]">0.7555</div>
+        </div>
+        <div class="bg-[var(--background)] border border-[var(--card-border)] rounded-lg px-3 py-2">
+          <div class="text-xs text-[var(--muted-foreground)]">Unseen-JD F1</div>
+          <div class="text-base font-bold font-mono text-[var(--primary)]">0.6346</div>
+        </div>
+        <div class="bg-[var(--background)] border border-[var(--card-border)] rounded-lg px-3 py-2">
+          <div class="text-xs text-[var(--muted-foreground)]">Gross Error Rate</div>
+          <div class="text-base font-bold font-mono text-[var(--warning)]">0.56%</div>
+        </div>
+        <div class="bg-[var(--background)] border border-[var(--card-border)] rounded-lg px-3 py-2">
+          <div class="text-xs text-[var(--muted-foreground)]">Matched Gap</div>
+          <div class="text-base font-bold font-mono text-[var(--foreground)]">≤ 0.010</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="flex flex-wrap gap-2 border-b border-[var(--border)] pb-2" id="tab-nav">
+      <button onclick="switchTab('sim')" id="tab-btn-sim" class="px-3.5 py-2 rounded-lg text-xs font-semibold transition bg-[var(--primary)] text-[var(--primary-foreground)]">
+        1. Live ATS Match Simulator
+      </button>
+      <button onclick="switchTab('splits')" id="tab-btn-splits" class="px-3.5 py-2 rounded-lg text-xs font-semibold transition bg-[var(--card)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
+        2. Train vs. Test & Unseen-JD Splits
+      </button>
+      <button onclick="switchTab('perf')" id="tab-btn-perf" class="px-3.5 py-2 rounded-lg text-xs font-semibold transition bg-[var(--card)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
+        3. Model Benchmarks & Confusion Matrix
+      </button>
+      <button onclick="switchTab('fairness')" id="tab-btn-fairness" class="px-3.5 py-2 rounded-lg text-xs font-semibold transition bg-[var(--card)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
+        4. PopResume Fairness & Counterfactuals
+      </button>
+      <button onclick="switchTab('arch')" id="tab-btn-arch" class="px-3.5 py-2 rounded-lg text-xs font-semibold transition bg-[var(--card)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
+        5. PyTorch Bi-Encoder Architecture
+      </button>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 1: LIVE ATS MATCH SIMULATOR                                       -->
+    <!-- ===================================================================== -->
+    <div id="tab-sim" class="space-y-4">
+      <!-- Preset Bar -->
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-xs font-semibold text-[var(--muted-foreground)]">Load Preset Pair:</span>
+          <button onclick="loadPreset('python_good')" class="px-2.5 py-1 text-xs rounded-md bg-[var(--background)] border border-[var(--border)] hover:border-[var(--primary)] transition">
+            Senior Python Dev (Part 7 Demo · Good Fit)
+          </button>
+          <button onclick="loadPreset('analyst_good')" class="px-2.5 py-1 text-xs rounded-md bg-[var(--background)] border border-[var(--border)] hover:border-[var(--primary)] transition">
+            Data Analyst (Part 6.1 Demo · Good Fit)
+          </button>
+          <button onclick="loadPreset('ml_potential')" class="px-2.5 py-1 text-xs rounded-md bg-[var(--background)] border border-[var(--border)] hover:border-[var(--primary)] transition">
+            ML Engineer Partial Match (Potential Fit)
+          </button>
+          <button onclick="loadPreset('cross_nofit')" class="px-2.5 py-1 text-xs rounded-md bg-[var(--background)] border border-[var(--border)] hover:border-[var(--primary)] transition">
+            Held-Out Cross-Domain Pair (Part 6.1 · No Fit)
+          </button>
+        </div>
+        <button onclick="runSimulator()" class="px-4 py-1.5 text-xs font-semibold rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 transition">
+          Run Skilltrx Audit ▸
+        </button>
+      </div>
+
+      <!-- Input Textareas -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Candidate Resume (Raw Text)</label>
+            <span id="res-token-badge" class="text-xs font-mono text-[var(--muted-foreground)]">0 tokens · 1 chunk</span>
+          </div>
+          <textarea id="sim-resume" rows="6" oninput="runSimulator()" class="w-full rounded-lg bg-[var(--background)] border border-[var(--card-border)] p-3 text-xs font-mono leading-relaxed focus:outline-none focus:border-[var(--primary)]"></textarea>
+        </div>
+
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Target Job Description (JD)</label>
+            <span id="jd-token-badge" class="text-xs font-mono text-[var(--muted-foreground)]">0 tokens · 1 chunk</span>
+          </div>
+          <textarea id="sim-jd" rows="6" oninput="runSimulator()" class="w-full rounded-lg bg-[var(--background)] border border-[var(--card-border)] p-3 text-xs font-mono leading-relaxed focus:outline-none focus:border-[var(--primary)]"></textarea>
+        </div>
+      </div>
+
+      <!-- Dual-Window Simulator Output -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <!-- Window 1: Quantitative Profile -->
+        <div class="lg:col-span-5 bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 space-y-4">
+          <div class="flex items-center justify-between border-b border-[var(--card-border)] pb-2.5">
+            <span class="text-xs font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Window 1 · Quantitative Profile</span>
+            <span id="sim-mode-tag" class="text-xs font-mono px-2 py-0.5 rounded bg-[var(--background)] border border-[var(--card-border)]">Exact Checkpoint Output</span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2.5 text-center">
+            <div class="bg-[var(--background)] border border-[var(--card-border)] rounded-lg p-3">
+              <div class="text-xs text-[var(--muted-foreground)]">Decision</div>
+              <div id="out-decision" class="text-sm font-bold font-mono mt-1">GOOD FIT</div>
+            </div>
+            <div class="bg-[var(--background)] border border-[var(--card-border)] rounded-lg p-3">
+              <div class="text-xs text-[var(--muted-foreground)]">Expected Fit (s)</div>
+              <div id="out-fitscore" class="text-sm font-bold font-mono mt-1">0.7780</div>
+            </div>
+            <div class="bg-[var(--background)] border border-[var(--card-border)] rounded-lg p-3">
+              <div class="text-xs text-[var(--muted-foreground)]">Cosine Sim</div>
+              <div id="out-cosine" class="text-sm font-bold font-mono mt-1">+0.6948</div>
+            </div>
+          </div>
+
+          <!-- Requirement Coverage Bar -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between text-xs">
+              <span class="font-semibold">Verbatim Requirement Coverage</span>
+              <span id="out-cov-label" class="font-mono font-bold">71.4% (5 / 7)</span>
+            </div>
+            <div class="w-full h-2.5 bg-[var(--background)] rounded-full overflow-hidden border border-[var(--card-border)]">
+              <div id="out-cov-bar" class="h-full bg-[var(--success)] transition-all duration-300" style="width: 71.4%"></div>
+            </div>
+          </div>
+
+          <!-- 3-Class Probabilities -->
+          <div class="space-y-2.5 pt-2 border-t border-[var(--card-border)]">
+            <div class="text-xs font-semibold text-[var(--muted-foreground)]">3-Class Softmax Confidence Distribution</div>
+            <div class="space-y-2" id="out-probs"></div>
+          </div>
+
+          <!-- Cleaned Text Preview Toggle -->
+          <details class="text-xs bg-[var(--background)] border border-[var(--card-border)] rounded-lg p-2.5">
+            <summary class="cursor-pointer font-semibold text-[var(--muted-foreground)]">Inspect Part 1 Header-Aware Text Cleaner & JSON</summary>
+            <pre id="out-json" class="mt-2 text-xs font-mono overflow-x-auto whitespace-pre-wrap text-[var(--code-foreground)] max-h-48"></pre>
+          </details>
+        </div>
+
+        <!-- Window 2: Requirement Interpretability Audit -->
+        <div class="lg:col-span-7 bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 space-y-4">
+          <div class="flex items-center justify-between border-b border-[var(--card-border)] pb-2.5">
+            <span class="text-xs font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Window 2 · Requirement Interpretability Audit (114-Skill / 23-Family Taxonomy)</span>
+            <span class="text-xs font-mono text-[var(--success)]">100% Verbatim Grounded</span>
+          </div>
+
+          <!-- Verbatim Matches -->
+          <div class="space-y-2">
+            <div class="text-xs font-bold text-[var(--success)] flex items-center gap-1.5">
+              <span>✔ Verbatim Identified Requirements</span>
+              <span id="count-matched" class="px-1.5 py-0.2 rounded bg-[var(--background)] border border-[var(--card-border)] font-mono">0</span>
+            </div>
+            <div id="list-matched" class="space-y-2"></div>
+          </div>
+
+          <!-- Partial Matches -->
+          <div class="space-y-2 pt-2 border-t border-[var(--card-border)]">
+            <div class="text-xs font-bold text-[var(--warning)] flex items-center gap-1.5">
+              <span>⟳ Related Partial Matches (Same Skill Family)</span>
+              <span id="count-partial" class="px-1.5 py-0.2 rounded bg-[var(--background)] border border-[var(--card-border)] font-mono">0</span>
+            </div>
+            <div id="list-partial" class="space-y-1.5"></div>
+          </div>
+
+          <!-- Not Identified -->
+          <div class="space-y-2 pt-2 border-t border-[var(--card-border)]">
+            <div class="text-xs font-bold text-[var(--error)] flex items-center gap-1.5">
+              <span>✗ Not Identified in Supplied Text</span>
+              <span id="count-missing" class="px-1.5 py-0.2 rounded bg-[var(--background)] border border-[var(--card-border)] font-mono">0</span>
+            </div>
+            <div id="list-missing" class="flex flex-wrap gap-1.5"></div>
+          </div>
+
+          <!-- Governance Notice -->
+          <div class="p-3 rounded-lg bg-[var(--background)] border border-[var(--card-border)] text-xs text-[var(--muted-foreground)] flex items-start gap-2">
+            <span class="font-bold text-[var(--warning)]">GOVERNANCE NOTICE:</span>
+            <span>Decision support only. "Not identified" means absent from supplied text, not proof that the candidate lacks the skill. A human recruiter must review original documents before any decision.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 2: TRAIN VS. TEST & UNSEEN-JD SPLITS EXPLORER                     -->
+    <!-- ===================================================================== -->
+    <div id="tab-splits" class="hidden space-y-4">
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 space-y-4">
+        <div>
+          <h2 class="text-base font-bold">Why We Built Two Test Sets: Fixing the 100% Resume Leakage in D1</h2>
+          <p class="text-xs text-[var(--muted-foreground)] mt-1">
+            D1 (<code class="font-mono">med2425/resume-job-fit-merged-v1</code>) contains 80,017 training pairs created from just <strong>642 unique resumes</strong> and <strong>280 unique job descriptions</strong> (~125 pairs per resume). In the dataset's original test split (<code class="font-mono">test_orig</code>), <strong>100% of test resumes were already seen in training</strong>. Skilltrx replaces it with a strict dual-axis leakage-free protocol:
+          </p>
+        </div>
+
+        <!-- Visual Split Diagram -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div class="bg-[var(--background)] border-2 border-[var(--primary)] rounded-xl p-3.5 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold font-mono text-[var(--primary)]">1. train (80% Resumes)</span>
+              <span class="text-xs font-mono px-1.5 py-0.5 rounded bg-[var(--card)]">57,519 pairs</span>
+            </div>
+            <div class="text-xs font-semibold">Study Material for Finetuning</div>
+            <div class="text-xs text-[var(--muted-foreground)]">• <strong>513</strong> Unique Resumes<br/>• <strong>252</strong> Unique Jobs (JDs)</div>
+            <div class="text-xs font-mono pt-1 text-[var(--muted-foreground)]">No Fit: 75.7% | Pot: 16.9% | Good: 7.3%</div>
+          </div>
+
+          <div class="bg-[var(--background)] border border-[var(--card-border)] rounded-xl p-3.5 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold font-mono">2. val (10% Resumes)</span>
+              <span class="text-xs font-mono px-1.5 py-0.5 rounded bg-[var(--card)]">6,683 pairs</span>
+            </div>
+            <div class="text-xs font-semibold">Practice Exam (Epoch Selection)</div>
+            <div class="text-xs text-[var(--muted-foreground)]">• <strong>63 Unseen Resumes (0% leak)</strong><br/>• Same 252 Jobs</div>
+            <div class="text-xs font-mono pt-1 text-[var(--success)]">Best Val Macro F1: 0.7692 (Ep 3)</div>
+          </div>
+
+          <div class="bg-[var(--background)] border-2 border-[var(--success)] rounded-xl p-3.5 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold font-mono text-[var(--success)]">3. test (Resume-Disjoint)</span>
+              <span class="text-xs font-mono px-1.5 py-0.5 rounded bg-[var(--card)]">7,500 pairs</span>
+            </div>
+            <div class="text-xs font-semibold">New Applicants → Known Jobs</div>
+            <div class="text-xs text-[var(--muted-foreground)]">• <strong>66 Unseen Resumes (0% leak)</strong><br/>• Same 252 Jobs</div>
+            <div class="text-xs font-mono pt-1 text-[var(--success)] font-bold">Macro F1: 0.7555 | Acc: 85.04%</div>
+          </div>
+
+          <div class="bg-[var(--background)] border-2 border-[var(--warning)] rounded-xl p-3.5 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold font-mono text-[var(--warning)]">4. jd_test (Unseen Jobs)</span>
+              <span class="text-xs font-mono px-1.5 py-0.5 rounded bg-[var(--card)]">8,315 pairs</span>
+            </div>
+            <div class="text-xs font-semibold">Candidates → Brand-New Job</div>
+            <div class="text-xs text-[var(--muted-foreground)]">• 642 Resumes<br/>• <strong>28 Unseen Jobs (0% JD leak)</strong></div>
+            <div class="text-xs font-mono pt-1 text-[var(--warning)] font-bold">Macro F1: 0.6346 | Acc: 81.72%</div>
+          </div>
+        </div>
+
+        <!-- Partition Comparison Table -->
+        <div class="overflow-x-auto pt-2">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="border-b border-[var(--border)] text-[var(--muted-foreground)]">
+                <th class="py-2 px-3">Partition Name</th>
+                <th class="py-2 px-3">Real-World Scenario</th>
+                <th class="py-2 px-3 text-right">Pairs</th>
+                <th class="py-2 px-3 text-right">Unique Resumes</th>
+                <th class="py-2 px-3 text-right">Unique JDs</th>
+                <th class="py-2 px-3 text-right">Resumes in Train</th>
+                <th class="py-2 px-3 text-right">JDs in Train</th>
+                <th class="py-2 px-3 text-right">Class Mix (No / Pot / Good)</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[var(--card-border)] font-mono">
+              <tr>
+                <td class="py-2.5 px-3 font-bold">train</td>
+                <td class="py-2.5 px-3 font-sans">Model training pairs (class-weighted loss)</td>
+                <td class="py-2.5 px-3 text-right">57,519</td>
+                <td class="py-2.5 px-3 text-right">513</td>
+                <td class="py-2.5 px-3 text-right">252</td>
+                <td class="py-2.5 px-3 text-right">—</td>
+                <td class="py-2.5 px-3 text-right">—</td>
+                <td class="py-2.5 px-3 text-right">75.7% / 16.9% / 7.3%</td>
+              </tr>
+              <tr>
+                <td class="py-2.5 px-3 font-bold">val</td>
+                <td class="py-2.5 px-3 font-sans">Early stopping & checkpoint selection</td>
+                <td class="py-2.5 px-3 text-right">6,683</td>
+                <td class="py-2.5 px-3 text-right">63</td>
+                <td class="py-2.5 px-3 text-right">252</td>
+                <td class="py-2.5 px-3 text-right text-[var(--success)] font-bold">0.0%</td>
+                <td class="py-2.5 px-3 text-right">100.0%</td>
+                <td class="py-2.5 px-3 text-right">72.9% / 18.8% / 8.3%</td>
+              </tr>
+              <tr>
+                <td class="py-2.5 px-3 font-bold text-[var(--success)]">test (Resume-Disjoint)</td>
+                <td class="py-2.5 px-3 font-sans">New candidates applying to existing company jobs</td>
+                <td class="py-2.5 px-3 text-right">7,500</td>
+                <td class="py-2.5 px-3 text-right">66</td>
+                <td class="py-2.5 px-3 text-right">252</td>
+                <td class="py-2.5 px-3 text-right text-[var(--success)] font-bold">0.0%</td>
+                <td class="py-2.5 px-3 text-right">100.0%</td>
+                <td class="py-2.5 px-3 text-right">72.9% / 17.9% / 9.2%</td>
+              </tr>
+              <tr>
+                <td class="py-2.5 px-3 font-bold text-[var(--warning)]">jd_test (Unseen-JD)</td>
+                <td class="py-2.5 px-3 font-sans">Screening candidates for a brand-new job requisition</td>
+                <td class="py-2.5 px-3 text-right">8,315</td>
+                <td class="py-2.5 px-3 text-right">642</td>
+                <td class="py-2.5 px-3 text-right">28</td>
+                <td class="py-2.5 px-3 text-right">80.1%</td>
+                <td class="py-2.5 px-3 text-right text-[var(--success)] font-bold">0.0%</td>
+                <td class="py-2.5 px-3 text-right">77.1% / 18.9% / 4.1%</td>
+              </tr>
+              <tr class="text-[var(--muted-foreground)]">
+                <td class="py-2.5 px-3">test_orig (Reference)</td>
+                <td class="py-2.5 px-3 font-sans">Provided HF benchmark split (leaked resumes)</td>
+                <td class="py-2.5 px-3 text-right">13,716</td>
+                <td class="py-2.5 px-3 text-right">477</td>
+                <td class="py-2.5 px-3 text-right">71</td>
+                <td class="py-2.5 px-3 text-right text-[var(--error)]">78.3% (100% raw D1)</td>
+                <td class="py-2.5 px-3 text-right">0.0%</td>
+                <td class="py-2.5 px-3 text-right">61.7% / 26.1% / 12.2%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- LLM Label Agreement Audit Card -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 space-y-2">
+          <h3 class="text-sm font-bold">Label Validity Audit: Qwen2.5-32B (D1) vs. Original Labels (D2)</h3>
+          <p class="text-xs text-[var(--muted-foreground)]">
+            Matched <strong>1,004 identical resume–JD pairs</strong> across D1 and D2. Exact agreement is only <strong>39.64%</strong> (Cohen's κ = 0.0687, Quadratic Weighted κ = 0.1718, Two-class jumps = 14.84%). All model metrics therefore measure fidelity to the Qwen2.5-32B labeller rather than human recruiter consensus.
+          </p>
+          <div class="grid grid-cols-3 gap-2 pt-1 text-center font-mono text-xs">
+            <div class="p-2 rounded bg-[var(--background)] border border-[var(--card-border)]">
+              <div class="text-[var(--muted-foreground)]">Exact Agree</div>
+              <div class="font-bold text-sm">39.6%</div>
+            </div>
+            <div class="p-2 rounded bg-[var(--background)] border border-[var(--card-border)]">
+              <div class="text-[var(--muted-foreground)]">Weighted κ</div>
+              <div class="font-bold text-sm">0.172</div>
+            </div>
+            <div class="p-2 rounded bg-[var(--background)] border border-[var(--card-border)]">
+              <div class="text-[var(--muted-foreground)]">2-Class Jumps</div>
+              <div class="font-bold text-sm text-[var(--error)]">14.8%</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 space-y-2">
+          <h3 class="text-sm font-bold">Document Length vs. Standard Encoder Limits (Cell 1.4)</h3>
+          <p class="text-xs text-[var(--muted-foreground)]">
+            Standard <code class="font-mono">all-MiniLM-L6-v2</code> truncates after 256 tokens. In D1, <strong>99.8% of resumes</strong> (median 1,039 tokens, p90 = 1,838) and <strong>74.4% of JDs</strong> (median 422 tokens) exceed 256 tokens. Skilltrx uses up to 6 overlapping 256-token windows (stride 192) to prevent truncation loss.
+          </p>
+          <div class="grid grid-cols-3 gap-2 pt-1 text-center font-mono text-xs">
+            <div class="p-2 rounded bg-[var(--background)] border border-[var(--card-border)]">
+              <div class="text-[var(--muted-foreground)]">Resumes &gt; 256t</div>
+              <div class="font-bold text-sm text-[var(--warning)]">99.8%</div>
+            </div>
+            <div class="p-2 rounded bg-[var(--background)] border border-[var(--card-border)]">
+              <div class="text-[var(--muted-foreground)]">JDs &gt; 256t</div>
+              <div class="font-bold text-sm text-[var(--warning)]">74.4%</div>
+            </div>
+            <div class="p-2 rounded bg-[var(--background)] border border-[var(--card-border)]">
+              <div class="text-[var(--muted-foreground)]">Hitting 6-Chunk Cap</div>
+              <div class="font-bold text-sm">36.0%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 3: MODEL BENCHMARKS, SLICES & CONFUSION MATRIX                    -->
+    <!-- ===================================================================== -->
+    <div id="tab-perf" class="hidden space-y-4">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <!-- Model Comparison Table -->
+        <div class="lg:col-span-7 bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold">Model Comparison Across All 4 Evaluation Partitions</h3>
+            <div class="flex gap-1.5">
+              <button onclick="renderPerfTable('f1')" id="btn-metric-f1" class="px-2.5 py-1 text-xs font-semibold rounded bg-[var(--primary)] text-[var(--primary-foreground)]">Macro F1</button>
+              <button onclick="renderPerfTable('acc')" id="btn-metric-acc" class="px-2.5 py-1 text-xs font-semibold rounded bg-[var(--background)] border border-[var(--border)]">Accuracy</button>
+            </div>
+          </div>
+
+          <div id="perf-bars" class="space-y-3 pt-1"></div>
+
+          <!-- Bootstrap Significance Table -->
+          <div class="pt-3 border-t border-[var(--card-border)]">
+            <div class="text-xs font-bold mb-2">Resume-Clustered Paired Bootstrap (1,000 Resamples · 95% Confidence Intervals)</div>
+            <table class="w-full text-xs font-mono border-collapse">
+              <thead>
+                <tr class="border-b border-[var(--border)] text-[var(--muted-foreground)] text-left">
+                  <th class="py-1.5">Fine-Tuned SBERT vs. Baseline</th>
+                  <th class="py-1.5 text-right">Test F1 Gain (95% CI)</th>
+                  <th class="py-1.5 text-right">Unseen-JD Gain (95% CI)</th>
+                  <th class="py-1.5 text-right">Significant?</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[var(--card-border)]">
+                <tr>
+                  <td class="py-1.5">vs. MiniLM Frozen + Head (A2)</td>
+                  <td class="py-1.5 text-right text-[var(--success)]">+0.1571 [0.1286, 0.1851]</td>
+                  <td class="py-1.5 text-right text-[var(--success)]">+0.1266 [0.1071, 0.1460]</td>
+                  <td class="py-1.5 text-right font-bold text-[var(--success)]">YES (p &lt; 0.05)</td>
+                </tr>
+                <tr>
+                  <td class="py-1.5">vs. TF-IDF + LogReg (C)</td>
+                  <td class="py-1.5 text-right text-[var(--success)]">+0.2431 [0.2078, 0.2758]</td>
+                  <td class="py-1.5 text-right text-[var(--success)]">+0.2094 [0.1888, 0.2287]</td>
+                  <td class="py-1.5 text-right font-bold text-[var(--success)]">YES (p &lt; 0.05)</td>
+                </tr>
+                <tr>
+                  <td class="py-1.5">vs. MiniLM Cosine Only (A1)</td>
+                  <td class="py-1.5 text-right text-[var(--success)]">+0.2976 [0.2630, 0.3305]</td>
+                  <td class="py-1.5 text-right text-[var(--success)]">+0.1958 [0.1753, 0.2158]</td>
+                  <td class="py-1.5 text-right font-bold text-[var(--success)]">YES (p &lt; 0.05)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Row-Normalized Confusion Matrix & Per-Class Metrics -->
+        <div class="lg:col-span-5 bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold">Confusion Matrix & Per-Class Report</h3>
+            <div class="flex gap-1.5">
+              <button onclick="renderConfusion('test')" id="btn-cm-test" class="px-2.5 py-1 text-xs font-semibold rounded bg-[var(--primary)] text-[var(--primary-foreground)]">test (n=7,500)</button>
+              <button onclick="renderConfusion('jd_test')" id="btn-cm-jd" class="px-2.5 py-1 text-xs font-semibold rounded bg-[var(--background)] border border-[var(--border)]">jd_test (n=8,315)</button>
+            </div>
+          </div>
+
+          <div id="cm-grid" class="pt-1"></div>
+          <div id="per-class-table" class="pt-2 border-t border-[var(--card-border)]"></div>
+        </div>
+      </div>
+
+      <!-- Domain Shortcut & Calibration Row -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 space-y-2">
+          <h3 class="text-sm font-bold">Domain-Shortcut Check: Same-Domain vs. Cross-Domain Macro F1</h3>
+          <p class="text-xs text-[var(--muted-foreground)]">
+            In D1 training data, 89.2% of cross-domain pairs are <code class="font-mono">No Fit</code>. Despite this shortcut risk, <code class="font-mono">sbert_finetuned</code> performs equally strongly on realistic <strong>same-domain pairs (0.749 F1)</strong> and cross-domain pairs (0.741 F1) on the resume-disjoint test set.
+          </p>
+          <table class="w-full text-xs font-mono border-collapse mt-2">
+            <thead>
+              <tr class="border-b border-[var(--border)] text-[var(--muted-foreground)] text-left">
+                <th class="py-1.5">Test Slice</th>
+                <th class="py-1.5 text-right">Pairs</th>
+                <th class="py-1.5 text-right">TF-IDF</th>
+                <th class="py-1.5 text-right">Cosine</th>
+                <th class="py-1.5 text-right">Frozen+Head</th>
+                <th class="py-1.5 text-right text-[var(--success)]">Fine-Tuned</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[var(--card-border)]">
+              <tr>
+                <td class="py-1.5">Test · Same Domain</td>
+                <td class="py-1.5 text-right">4,231</td>
+                <td class="py-1.5 text-right">0.513</td>
+                <td class="py-1.5 text-right">0.458</td>
+                <td class="py-1.5 text-right">0.602</td>
+                <td class="py-1.5 text-right font-bold text-[var(--success)]">0.749</td>
+              </tr>
+              <tr>
+                <td class="py-1.5">Test · Cross Domain</td>
+                <td class="py-1.5 text-right">3,269</td>
+                <td class="py-1.5 text-right">0.461</td>
+                <td class="py-1.5 text-right">0.410</td>
+                <td class="py-1.5 text-right">0.534</td>
+                <td class="py-1.5 text-right font-bold text-[var(--success)]">0.741</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 space-y-2">
+          <h3 class="text-sm font-bold">Probability Calibration (ECE) & Requirement Coverage Alignment</h3>
+          <p class="text-xs text-[var(--muted-foreground)]">
+            Expected Calibration Error (ECE, 10 bins, lower is better) drops from <strong>0.0954</strong> (TF-IDF) and <strong>0.0824</strong> (Cosine) to <strong>0.0466</strong> (Fine-Tuned SBERT). Furthermore, requirement coverage scales monotonically from No Fit (0.177) → Potential Fit (0.395) → Good Fit (0.509).
+          </p>
+          <div class="grid grid-cols-4 gap-2 pt-2 text-center font-mono text-xs">
+            <div class="p-2 rounded bg-[var(--background)] border border-[var(--card-border)]">
+              <div class="text-[var(--muted-foreground)]">TF-IDF ECE</div>
+              <div class="font-bold">0.0954</div>
+            </div>
+            <div class="p-2 rounded bg-[var(--background)] border border-[var(--card-border)]">
+              <div class="text-[var(--muted-foreground)]">Cosine ECE</div>
+              <div class="font-bold">0.0824</div>
+            </div>
+            <div class="p-2 rounded bg-[var(--background)] border border-[var(--card-border)]">
+              <div class="text-[var(--muted-foreground)]">Frozen ECE</div>
+              <div class="font-bold text-[var(--success)]">0.0363</div>
+            </div>
+            <div class="p-2 rounded bg-[var(--background)] border border-[var(--card-border)]">
+              <div class="text-[var(--muted-foreground)]">Fine-Tuned ECE</div>
+              <div class="font-bold text-[var(--success)]">0.0466</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 4: POPRESUME FAIRNESS & COUNTERFACTUAL AUDIT                      -->
+    <!-- ===================================================================== -->
+    <div id="tab-fairness" class="hidden space-y-4">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <!-- Qualification-Matched Gaps & JD Swap -->
+        <div class="lg:col-span-5 bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 space-y-4">
+          <div>
+            <h3 class="text-sm font-bold">1. Qualification-Matched Score Gaps (60,884 PopResume Resumes)</h3>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              Compares candidates within identical <code class="font-mono">(occupation, education, experience_band)</code> strata (min 20 per group) using expected fit score <code class="font-mono">s = P(Good) + 0.5·P(Potential)</code>.
+            </p>
+          </div>
+          <table class="w-full text-xs font-mono border-collapse">
+            <thead>
+              <tr class="border-b border-[var(--border)] text-[var(--muted-foreground)] text-left">
+                <th class="py-1.5">Comparison</th>
+                <th class="py-1.5 text-right">Strata</th>
+                <th class="py-1.5 text-right">Candidates</th>
+                <th class="py-1.5 text-right">Matched Gap</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[var(--card-border)]">
+              <tr>
+                <td class="py-2">Sex: Female minus Male</td>
+                <td class="py-2 text-right">51</td>
+                <td class="py-2 text-right">59,729</td>
+                <td class="py-2 text-right font-bold text-[var(--success)]">−0.0031</td>
+              </tr>
+              <tr>
+                <td class="py-2">Race: Asian/PI minus White</td>
+                <td class="py-2 text-right">42</td>
+                <td class="py-2 text-right">54,716</td>
+                <td class="py-2 text-right font-bold text-[var(--success)]">+0.0100</td>
+              </tr>
+              <tr>
+                <td class="py-2">Race: Black minus White</td>
+                <td class="py-2 text-right">42</td>
+                <td class="py-2 text-right">48,726</td>
+                <td class="py-2 text-right font-bold text-[var(--success)]">+0.0009</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="pt-3 border-t border-[var(--card-border)] space-y-2">
+            <h3 class="text-sm font-bold">2. JD-Swap Sensitivity Check (687 True Good-Fit Test Pairs)</h3>
+            <p class="text-xs text-[var(--muted-foreground)]">
+              Replacing the JD of true <code class="font-mono">Good Fit</code> pairs with an unrelated cross-domain JD removes <strong>95.4%</strong> of Good Fit predictions (69.1% → 3.2%), proving the bi-encoder reads the job description rather than grading resumes in isolation.
+            </p>
+            <div class="grid grid-cols-3 gap-2 text-center font-mono text-xs">
+              <div class="p-2 rounded bg-[var(--background)] border border-[var(--card-border)]">
+                <div class="text-[var(--muted-foreground)]">Before Swap</div>
+                <div class="font-bold text-[var(--success)]">69.1% Good</div>
+              </div>
+              <div class="p-2 rounded bg-[var(--background)] border border-[var(--card-border)]">
+                <div class="text-[var(--muted-foreground)]">After JD Swap</div>
+                <div class="font-bold text-[var(--warning)]">3.2% Good</div>
+              </div>
+              <div class="p-2 rounded bg-[var(--background)] border border-[var(--card-border)]">
+                <div class="text-[var(--muted-foreground)]">Drop to No Fit</div>
+                <div class="font-bold text-[var(--error)]">86.8% No Fit</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Counterfactual Name Swaps -->
+        <div class="lg:col-span-7 bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 space-y-3">
+          <div>
+            <h3 class="text-sm font-bold">3. Controlled Counterfactual Name-Swap Audit (300 Resumes × 5 Occupations)</h3>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              Swaps only the candidate's first name (flipping sex signal while preserving age group) or surname (flipping racial group signal) while keeping 100% of qualifications identical. Mean score shifts are within ±0.01, though 2.0%–5.2% of borderline candidates flip discrete classes—motivating mandatory name redaction before scoring.
+            </p>
+          </div>
+          <table class="w-full text-xs font-mono border-collapse">
+            <thead>
+              <tr class="border-b border-[var(--border)] text-[var(--muted-foreground)] text-left">
+                <th class="py-1.5">Counterfactual Intervention</th>
+                <th class="py-1.5 text-right">Pairs (n)</th>
+                <th class="py-1.5 text-right">Mean Δ Score</th>
+                <th class="py-1.5 text-right">Mean |Δ Score|</th>
+                <th class="py-1.5 text-right">Class Flip Rate</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[var(--card-border)]">
+              <tr>
+                <td class="py-1.5">First-Name Sex: Female → Male</td>
+                <td class="py-1.5 text-right">738</td>
+                <td class="py-1.5 text-right">−0.0048</td>
+                <td class="py-1.5 text-right">0.0334</td>
+                <td class="py-1.5 text-right text-[var(--warning)]">4.74%</td>
+              </tr>
+              <tr>
+                <td class="py-1.5">First-Name Sex: Male → Female</td>
+                <td class="py-1.5 text-right">717</td>
+                <td class="py-1.5 text-right">−0.0096</td>
+                <td class="py-1.5 text-right">0.0355</td>
+                <td class="py-1.5 text-right text-[var(--warning)]">5.16%</td>
+              </tr>
+              <tr>
+                <td class="py-1.5">Surname Race: Asian/PI → Black</td>
+                <td class="py-1.5 text-right">253</td>
+                <td class="py-1.5 text-right">−0.0023</td>
+                <td class="py-1.5 text-right">0.0204</td>
+                <td class="py-1.5 text-right">1.98%</td>
+              </tr>
+              <tr>
+                <td class="py-1.5">Surname Race: Asian/PI → White</td>
+                <td class="py-1.5 text-right">253</td>
+                <td class="py-1.5 text-right">−0.0038</td>
+                <td class="py-1.5 text-right">0.0236</td>
+                <td class="py-1.5 text-right">2.77%</td>
+              </tr>
+              <tr>
+                <td class="py-1.5">Surname Race: Black → Asian/PI</td>
+                <td class="py-1.5 text-right">479</td>
+                <td class="py-1.5 text-right">+0.0011</td>
+                <td class="py-1.5 text-right">0.0291</td>
+                <td class="py-1.5 text-right text-[var(--warning)]">4.38%</td>
+              </tr>
+              <tr>
+                <td class="py-1.5">Surname Race: Black → White</td>
+                <td class="py-1.5 text-right">479</td>
+                <td class="py-1.5 text-right">+0.0013</td>
+                <td class="py-1.5 text-right">0.0290</td>
+                <td class="py-1.5 text-right">3.34%</td>
+              </tr>
+              <tr>
+                <td class="py-1.5">Surname Race: White → Asian/PI</td>
+                <td class="py-1.5 text-right">622</td>
+                <td class="py-1.5 text-right">+0.0019</td>
+                <td class="py-1.5 text-right">0.0303</td>
+                <td class="py-1.5 text-right">3.38%</td>
+              </tr>
+              <tr>
+                <td class="py-1.5">Surname Race: White → Black</td>
+                <td class="py-1.5 text-right">622</td>
+                <td class="py-1.5 text-right">−0.0024</td>
+                <td class="py-1.5 text-right">0.0289</td>
+                <td class="py-1.5 text-right">3.22%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 5: PYTORCH BI-ENCODER ARCHITECTURE                                -->
+    <!-- ===================================================================== -->
+    <div id="tab-arch" class="hidden space-y-4">
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 space-y-4">
+        <h2 class="text-base font-bold">End-to-End PyTorch Bi-Encoder Architecture (<code class="font-mono">BiEncoderMatcher(nn.Module)</code>)</h2>
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-3 text-xs">
+          <div class="p-3.5 rounded-xl bg-[var(--background)] border border-[var(--card-border)] space-y-1">
+            <div class="font-mono font-bold text-[var(--primary)]">Step 1 · Chunking</div>
+            <div class="font-semibold">Overlapping Windows</div>
+            <p class="text-[var(--muted-foreground)]">254 content tokens + [CLS]/[SEP] = 256 tokens, stride 192 (64-token overlap), up to 6 evenly spaced windows per document.</p>
+          </div>
+          <div class="p-3.5 rounded-xl bg-[var(--background)] border border-[var(--card-border)] space-y-1">
+            <div class="font-mono font-bold text-[var(--primary)]">Step 2 · Shared SBERT</div>
+            <div class="font-semibold">all-MiniLM-L6-v2</div>
+            <p class="text-[var(--muted-foreground)]">6 Transformer layers (384-d). Unique documents in a 32-pair batch are encoded once and indexed via <code class="font-mono">r_idx</code>, <code class="font-mono">j_idx</code>.</p>
+          </div>
+          <div class="p-3.5 rounded-xl bg-[var(--background)] border border-[var(--card-border)] space-y-1">
+            <div class="font-mono font-bold text-[var(--primary)]">Step 3 · Pool &amp; Norm</div>
+            <div class="font-semibold">Scatter-Add Pooling</div>
+            <p class="text-[var(--muted-foreground)]">Attention-masked mean pooling per window → <code class="font-mono">index_add_</code> across document windows → L2 normalization (<code class="font-mono">u, v ∈ ℝ³⁸⁴</code>).</p>
+          </div>
+          <div class="p-3.5 rounded-xl bg-[var(--background)] border border-[var(--card-border)] space-y-1">
+            <div class="font-mono font-bold text-[var(--primary)]">Step 4 · Interaction</div>
+            <div class="font-semibold">769-D Feature Fusion</div>
+            <p class="text-[var(--muted-foreground)]"><code class="font-mono">z = [cos(u,v); |u−v|; u⊙v]</code> combining scalar cosine (1-d), absolute difference (384-d), and Hadamard product (384-d).</p>
+          </div>
+          <div class="p-3.5 rounded-xl bg-[var(--background)] border border-[var(--card-border)] space-y-1">
+            <div class="font-mono font-bold text-[var(--primary)]">Step 5 · MLP &amp; Loss</div>
+            <div class="font-semibold">769 → 256 → 3</div>
+            <p class="text-[var(--muted-foreground)]">Linear(769,256) → GELU → Dropout(0.1) → Linear(256,3). Trained with class weights [0.44, 1.97, 4.55] &amp; two-speed AdamW.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // =========================================================================
+    // 1. EXACT 23-FAMILY / 114-SKILL TAXONOMY FROM SKILLTRX CELL 5.1
+    // =========================================================================
+    const SKILL_FAMILIES = {
+      "programming": {"python": ["python"], "java": ["java"], "javascript": ["javascript"], "typescript": ["typescript"],
+                      "c++": ["c++"], "c#": ["c#"], "go": ["golang"], "r": ["r programming", "rstudio"], "scala": ["scala"],
+                      "php": ["php"], "ruby": ["ruby"], "swift": ["swift"], "kotlin": ["kotlin"]},
+      "web": {"react": ["react", "reactjs", "react.js"], "angular": ["angular"], "node.js": ["node.js", "nodejs"],
+              "django": ["django"], "flask": ["flask"], "spring": ["spring boot", "spring framework"],
+              "html/css": ["html", "css"], ".net": [".net", "asp.net"], "rest api": ["rest api", "restful"]},
+      "databases": {"sql": ["sql"], "mysql": ["mysql"], "postgresql": ["postgresql", "postgres"], "mongodb": ["mongodb"],
+                    "nosql": ["nosql"], "oracle db": ["oracle database", "pl/sql"]},
+      "big data": {"spark": ["spark", "pyspark"], "hadoop": ["hadoop"], "etl": ["etl"],
+                   "data warehousing": ["data warehouse", "data warehousing", "snowflake", "redshift"]},
+      "bi tools": {"tableau": ["tableau"], "power bi": ["power bi", "powerbi"], "looker": ["looker"]},
+      "machine learning": {"machine learning": ["machine learning"], "deep learning": ["deep learning"],
+                           "nlp": ["nlp", "natural language processing"], "computer vision": ["computer vision"],
+                           "statistics": ["statistics", "statistical analysis"], "scikit-learn": ["scikit-learn", "sklearn"]},
+      "ml frameworks": {"pytorch": ["pytorch"], "tensorflow": ["tensorflow"], "keras": ["keras"]},
+      "cloud": {"aws": ["aws", "amazon web services"], "azure": ["azure"], "gcp": ["gcp", "google cloud"]},
+      "devops": {"docker": ["docker"], "kubernetes": ["kubernetes", "k8s"], "ci/cd": ["ci/cd", "jenkins", "github actions"],
+                 "git": ["git"], "linux": ["linux", "unix"], "terraform": ["terraform"]},
+      "testing": {"selenium": ["selenium"], "test automation": ["test automation", "automated testing"],
+                  "manual testing": ["manual testing"]},
+      "accounting": {"accounting": ["accounting", "accounts payable", "accounts receivable", "general ledger"],
+                     "financial reporting": ["financial reporting", "financial statements"],
+                     "budgeting": ["budgeting", "forecasting"], "auditing": ["audit", "auditing"],
+                     "tax": ["tax", "taxation"], "gaap/ifrs": ["gaap", "ifrs"], "quickbooks": ["quickbooks"],
+                     "financial analysis": ["financial analysis", "financial modeling", "financial modelling"]},
+      "erp": {"sap": ["sap"], "oracle erp": ["oracle financials", "oracle erp"]},
+      "finance certifications": {"cpa": ["cpa", "certified public accountant"], "cfa": ["cfa"], "acca": ["acca"]},
+      "marketing": {"seo": ["seo"], "digital marketing": ["digital marketing"], "social media": ["social media"],
+                    "content marketing": ["content marketing"], "google analytics": ["google analytics"],
+                    "market research": ["market research"]},
+      "sales": {"crm": ["crm"], "salesforce": ["salesforce"], "lead generation": ["lead generation"],
+                "account management": ["account management"], "b2b sales": ["b2b"]},
+      "healthcare": {"patient care": ["patient care"], "nursing": ["nursing", "registered nurse"],
+                     "ehr/emr": ["ehr", "emr", "electronic health records", "electronic medical records"],
+                     "bls/acls": ["bls", "acls", "cpr"], "medication administration": ["medication administration"]},
+      "hr": {"recruitment": ["recruitment", "recruiting", "talent acquisition"], "onboarding": ["onboarding"],
+             "payroll": ["payroll"], "employee relations": ["employee relations"], "hris": ["hris", "workday"]},
+      "design": {"figma": ["figma"], "photoshop": ["photoshop"], "illustrator": ["illustrator"],
+                 "ui/ux": ["ui/ux", "user experience", "ux design", "ui design"]},
+      "engineering tools": {"autocad": ["autocad"], "solidworks": ["solidworks"], "matlab": ["matlab"], "plc": ["plc"]},
+      "legal": {"contract drafting": ["contract drafting", "contract negotiation"], "litigation": ["litigation"],
+                "compliance": ["compliance", "regulatory compliance"], "legal research": ["legal research"]},
+      "project management": {"project management": ["project management"], "agile/scrum": ["agile", "scrum"],
+                             "jira": ["jira"], "pmp": ["pmp"], "stakeholder management": ["stakeholder management"]},
+      "office": {"excel": ["excel", "vlookup", "pivot table"], "ms office": ["microsoft office", "ms office"]},
+      "qualifications": {"bachelor's degree": ["bachelor", "bachelors", "b.tech", "b.sc", "bsc", "b.e."],
+                         "master's degree": ["master's", "masters", "m.tech", "m.sc", "msc"], "mba": ["mba"],
+                         "phd": ["phd", "ph.d", "doctorate"]}
+    };
+
+    function escapeRegex(s) {
+      return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    const SKILL_RX = [];
+    for (const [fam, skills] of Object.entries(SKILL_FAMILIES)) {
+      for (const [canon, aliases] of Object.entries(skills)) {
+        const pat = "(?<![a-z0-9+#.])(?:" + aliases.map(escapeRegex).join("|") + ")(?![a-z0-9+#])";
+        SKILL_RX.push({ canon, fam, rx: new RegExp(pat, "i") });
+      }
+    }
+
+    const SECTION_HEADERS = [
+      "Professional Summary", "Executive Summary", "Career Overview", "Professional Profile",
+      "Summary", "Profile", "Objective", "Highlights", "Qualifications", "Skills",
+      "Technical Skills", "Core Competencies", "Experience", "Work Experience",
+      "Professional Experience", "Work History", "Employment History", "Education",
+      "Education and Training", "Certifications", "Accomplishments", "Projects",
+      "Languages", "Interests", "Additional Information"
+    ].sort((a, b) => b.length - a.length);
+
+    const HEADER_GLUE = new RegExp("(?<![A-Za-z])(" + SECTION_HEADERS.map(escapeRegex).join("|") + ")(?=[A-Z])", "g");
+
+    function cleanText(text) {
+      if (!text) return "";
+      let t = text.replace(/<[^>]+>/g, " ");
+      t = t.replace(/\u00a0/g, " ").replace(/\r/g, "\n");
+      t = t.replace(HEADER_GLUE, "$1\n");
+      t = t.replace(/\s*[•●▪■◦\uf0b7]\s*/g, "\n- ");
+      t = t.replace(/[ \t]+/g, " ");
+      t = t.replace(/ *\n */g, "\n");
+      t = t.replace(/\n{2,}/g, "\n");
+      return t.trim();
+    }
+
+    function findSkills(text) {
+      const found = {};
+      for (const { canon, fam, rx } of SKILL_RX) {
+        const m = rx.exec(text);
+        if (m) {
+          found[canon] = { fam, start: m.index, end: m.index + m[0].length };
+        }
+      }
+      return found;
+    }
+
+    function extractEvidence(text, s, e, pad = 70) {
+      const prevNl = text.lastIndexOf("\n", s - 1);
+      let a = Math.max(s - pad, prevNl + 1);
+      const nextNl = text.indexOf("\n", e);
+      let b = Math.min(e + pad, nextNl !== -1 ? nextNl : text.length);
+      if (a > 0 && /[a-zA-Z0-9]/.test(text[a - 1])) {
+        const sp = text.indexOf(" ", a);
+        if (sp !== -1 && sp < s) a = sp + 1;
+      }
+      if (b < text.length && /[a-zA-Z0-9]/.test(text[b])) {
+        const sp = text.lastIndexOf(" ", b);
+        if (sp >= e) b = sp;
+      }
+      return text.slice(a, b).trim();
+    }
+
+    // Presets with exact Colab checkpoint outputs where applicable
+    const PRESETS = {
+      python_good: {
+        resume: "Summary: Experienced Software Engineer specialized in backend systems. Over 6 years developing web applications in Python and Flask. Database design using PostgreSQL and Redis. Deployments managed on GCP and AWS. Skills: Python, Flask, SQL, PostgreSQL, Docker, AWS, Git. Education: B.Sc. in Computer Science.",
+        jd: "We are looking for a Senior Python Developer. Must have 5+ years of experience in Python, Django, PostgreSQL, and AWS. Experience with Docker or Kubernetes is a plus. Bachelor's degree in CS required.",
+        exactProbs: { "No Fit": 0.0070, "Potential Fit": 0.4300, "Good Fit": 0.5630 },
+        exactCos: 0.6948
+      },
+      analyst_good: {
+        resume: "SummaryData analyst with 3 years of experience in SQL, Python and Tableau. Built ETL pipelines and dashboards for finance teams.\nEducationB.Tech in Computer Science\nSkills\n- Python\n- SQL\n- Power BI\n- Excel",
+        jd: "We are hiring a Data Analyst. Requirements: bachelor's degree, 2+ years with SQL and Python, experience with Tableau or Power BI, knowledge of statistics. AWS is a plus.",
+        exactProbs: { "No Fit": 0.0049, "Potential Fit": 0.3771, "Good Fit": 0.6180 },
+        exactCos: 0.7517
+      },
+      ml_potential: {
+        resume: "Professional SummaryMachine Learning Engineer with 3 years experience building NLP and deep learning models using TensorFlow, Keras and scikit-learn. Deployed REST API services with Flask and Docker on GCP. EducationM.Tech in Data Science.",
+        jd: "Hiring ML Engineer. Requirements: Master's degree or PhD, strong Python, PyTorch, NLP and Computer Vision experience. Experience deploying on AWS with Kubernetes and CI/CD pipelines."
+      },
+      cross_nofit: {
+        resume: "Professional SummaryParalegal and Legal Assistant with 5 years experience in contract drafting, legal research, and litigation support. Prepared Contracts of Sale, Promissory Notes, and Powers of Attorney. Assisted accounting department in maintaining bank accounts, including managing payroll. Proficient in Microsoft Word, Excel, Publisher, PowerPoint, Outlook, Lawson, Time Matters and Internet.",
+        jd: "Staff Accountant & HR Coordinator. Requirements: Bachelor's degree in Accounting, experience with QuickBooks, accounting, Excel, MS Office, and recruitment.",
+        exactProbs: { "No Fit": 0.5809, "Potential Fit": 0.4191, "Good Fit": 0.0000 },
+        exactCos: 0.1948
+      }
+    };
+
+    function loadPreset(key) {
+      const p = PRESETS[key];
+      document.getElementById("sim-resume").value = p.resume;
+      document.getElementById("sim-jd").value = p.jd;
+      runSimulator(key);
+    }
+
+    function runSimulator(presetKey = null) {
+      const rawRes = document.getElementById("sim-resume").value;
+      const rawJd = document.getElementById("sim-jd").value;
+      const rClean = cleanText(rawRes);
+      const jClean = cleanText(rawJd);
+
+      // Estimate tokens & chunks
+      const rTokens = Math.max(1, Math.round(rClean.split(/\s+/).filter(Boolean).length * 1.3));
+      const jTokens = Math.max(1, Math.round(jClean.split(/\s+/).filter(Boolean).length * 1.3));
+      const rChunks = rTokens <= 254 ? 1 : Math.min(6, Math.ceil((rTokens - 254) / 192) + 1);
+      const jChunks = jTokens <= 254 ? 1 : Math.min(6, Math.ceil((jTokens - 254) / 192) + 1);
+      document.getElementById("res-token-badge").textContent = `~${rTokens} tokens · ${rChunks} window(s)`;
+      document.getElementById("jd-token-badge").textContent = `~${jTokens} tokens · ${jChunks} window(s)`;
+
+      const req = findSkills(jClean);
+      const have = findSkills(rClean);
+      const haveFams = {};
+      for (const [c, info] of Object.entries(have)) {
+        if (!haveFams[info.fam]) haveFams[info.fam] = [];
+        haveFams[info.fam].push(c);
+      }
+
+      const matched = [], partial = [], missing = [];
+      for (const [c, info] of Object.entries(req)) {
+        if (have[c]) {
+          matched.push({ requirement: c, family: info.fam, evidence: extractEvidence(rClean, have[c].start, have[c].end) });
+        } else if (haveFams[info.fam]) {
+          partial.push({ requirement: c, family: info.fam, related_in_resume: haveFams[info.fam] });
+        } else {
+          missing.push(c);
+        }
+      }
+
+      const reqCount = Object.keys(req).length;
+      const cov = reqCount > 0 ? matched.length / reqCount : null;
+
+      // Determine probabilities (use exact Colab checkpoint numbers if matching a preset, else calibrated semantic heuristic)
+      let probs, cosSim, isExact = false;
+      for (const p of Object.values(PRESETS)) {
+        if (p.exactProbs && p.resume.trim() === rawRes.trim() && p.jd.trim() === rawJd.trim()) {
+          probs = p.exactProbs;
+          cosSim = p.exactCos;
+          isExact = true;
+          break;
+        }
+      }
+
+      if (!isExact) {
+        // Word overlap + skill family alignment approximation for live editing
+        const rWords = new Set(rClean.toLowerCase().match(/[a-z0-9+#.]{2,}/g) || []);
+        const jWords = new Set(jClean.toLowerCase().match(/[a-z0-9+#.]{2,}/g) || []);
+        let shared = 0;
+        for (const w of jWords) if (rWords.has(w)) shared++;
+        const lexOverlap = jWords.size ? shared / Math.sqrt(rWords.size * jWords.size) : 0;
+        const skillScore = reqCount > 0 ? (matched.length + 0.45 * partial.length) / reqCount : lexOverlap;
+        cosSim = Math.min(0.92, Math.max(-0.20, 0.15 + 0.55 * skillScore + 0.45 * lexOverlap));
+
+        const lGood = -2.2 + 3.6 * skillScore + 1.8 * cosSim;
+        const lPot  = -0.4 + 1.7 * skillScore + 0.9 * cosSim;
+        const lNo   =  1.6 - 3.2 * skillScore - 1.5 * cosSim;
+        const m = Math.max(lNo, lPot, lGood);
+        const eNo = Math.exp(lNo - m), ePot = Math.exp(lPot - m), eGood = Math.exp(lGood - m);
+        const sum = eNo + ePot + eGood;
+        probs = {
+          "No Fit": +(eNo / sum).toFixed(4),
+          "Potential Fit": +(ePot / sum).toFixed(4),
+          "Good Fit": +(eGood / sum).toFixed(4)
+        };
+      }
+
+      document.getElementById("sim-mode-tag").textContent = isExact ? "Exact Colab Checkpoint Output" : "Live Interactive Estimation";
+
+      const entries = Object.entries(probs);
+      entries.sort((a, b) => b[1] - a[1]);
+      const predClass = entries[0][0];
+      const fitScore = probs["Good Fit"] + 0.5 * probs["Potential Fit"];
+
+      // Render Window 1
+      const decEl = document.getElementById("out-decision");
+      decEl.textContent = predClass.toUpperCase();
+      decEl.className = "text-sm font-bold font-mono mt-1 " + (
+        predClass === "Good Fit" ? "text-[var(--success)]" :
+        predClass === "Potential Fit" ? "text-[var(--warning)]" : "text-[var(--error)]"
+      );
+      document.getElementById("out-fitscore").textContent = fitScore.toFixed(4);
+      document.getElementById("out-cosine").textContent = (cosSim >= 0 ? "+" : "") + cosSim.toFixed(4);
+
+      if (cov !== null) {
+        document.getElementById("out-cov-label").textContent = `${(cov * 100).toFixed(1)}% (${matched.length} / ${reqCount})`;
+        document.getElementById("out-cov-bar").style.width = `${(cov * 100).toFixed(1)}%`;
+      } else {
+        document.getElementById("out-cov-label").textContent = "N/A (0 mapped JD skills)";
+        document.getElementById("out-cov-bar").style.width = "0%";
+      }
+
+      const probsContainer = document.getElementById("out-probs");
+      probsContainer.innerHTML = ["No Fit", "Potential Fit", "Good Fit"].map(lab => {
+        const p = probs[lab] || 0;
+        const pct = (p * 100).toFixed(1);
+        const color = lab === "Good Fit" ? "bg-[var(--success)]" : lab === "Potential Fit" ? "bg-[var(--warning)]" : "bg-[var(--error)]";
+        return `
+          <div class="space-y-1">
+            <div class="flex justify-between text-xs font-mono">
+              <span>${lab}</span>
+              <span>${pct}%</span>
+            </div>
+            <div class="w-full h-2 bg-[var(--background)] rounded-full overflow-hidden border border-[var(--card-border)]">
+              <div class="h-full ${color}" style="width: ${pct}%"></div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      // Render Window 2
+      document.getElementById("count-matched").textContent = matched.length;
+      document.getElementById("list-matched").innerHTML = matched.length ? matched.map(m => `
+        <div class="p-2.5 rounded-lg bg-[var(--background)] border border-[var(--card-border)] space-y-1">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold font-mono text-[var(--success)]">• ${m.requirement}</span>
+            <span class="text-xs font-mono text-[var(--muted-foreground)]">family: ${m.family}</span>
+          </div>
+          <div class="text-xs font-mono text-[var(--muted-foreground)] italic">"${m.evidence}"</div>
+        </div>
+      `).join("") : `<div class="text-xs text-[var(--muted-foreground)] italic">None identified</div>`;
+
+      document.getElementById("count-partial").textContent = partial.length;
+      document.getElementById("list-partial").innerHTML = partial.length ? partial.map(p => `
+        <div class="p-2 rounded-lg bg-[var(--background)] border border-[var(--card-border)] flex items-center justify-between text-xs font-mono">
+          <span><strong class="text-[var(--warning)]">• ${p.requirement}</strong> <span class="text-[var(--muted-foreground)]">(${p.family})</span></span>
+          <span>Resume has: <strong class="text-[var(--primary)]">${p.related_in_resume.join(", ")}</strong></span>
+        </div>
+      `).join("") : `<div class="text-xs text-[var(--muted-foreground)] italic">None identified</div>`;
+
+      document.getElementById("count-missing").textContent = missing.length;
+      document.getElementById("list-missing").innerHTML = missing.length ? missing.map(x => `
+        <span class="px-2.5 py-1 rounded-md bg-[var(--background)] border border-[var(--card-border)] text-xs font-mono text-[var(--error)]">✗ ${x}</span>
+      `).join("") : `<span class="text-xs text-[var(--muted-foreground)] italic">None — all recognised JD skills accounted for!</span>`;
+
+      const record = {
+        compatibility_class: predClass,
+        expected_fit_score: +fitScore.toFixed(4),
+        class_probabilities: probs,
+        semantic_similarity: +cosSim.toFixed(4),
+        matched_requirements: matched.map(({requirement, evidence}) => ({requirement, evidence})),
+        partial_requirements: partial.map(({requirement, related_in_resume}) => ({requirement, related_in_resume})),
+        not_identified: missing,
+        requirement_coverage: cov !== null ? +cov.toFixed(3) : null,
+        review_notice: "Decision support only. A recruiter must review the original documents before any decision."
+      };
+      document.getElementById("out-json").textContent = JSON.stringify(record, null, 2);
+    }
+
+    // =========================================================================
+    // 2. TAB 3 BENCHMARK & CONFUSION MATRIX RENDERERS
+    // =========================================================================
+    const PERF_DATA = {
+      f1: [
+        { name: "Fine-Tuned SBERT Bi-Encoder (Proposed)", val: 0.7692, test: 0.7555, jd_test: 0.6346, test_orig: 0.6731, highlight: true },
+        { name: "Pretrained MiniLM Frozen + Interaction Head (A2)", val: 0.6082, test: 0.5984, jd_test: 0.5080, test_orig: 0.5649, highlight: false },
+        { name: "TF-IDF Overlap + Logistic Regression (C)", val: 0.5010, test: 0.5124, jd_test: 0.4252, test_orig: 0.5393, highlight: false },
+        { name: "Pretrained MiniLM Cosine Similarity Only (A1)", val: 0.4610, test: 0.4579, jd_test: 0.4388, test_orig: 0.5223, highlight: false }
+      ],
+      acc: [
+        { name: "Fine-Tuned SBERT Bi-Encoder (Proposed)", val: 0.8577, test: 0.8504, jd_test: 0.8172, test_orig: 0.7557, highlight: true },
+        { name: "Pretrained MiniLM Frozen + Interaction Head (A2)", val: 0.7227, test: 0.7049, jd_test: 0.6995, test_orig: 0.6607, highlight: false },
+        { name: "TF-IDF Overlap + Logistic Regression (C)", val: 0.6207, test: 0.6421, jd_test: 0.6184, test_orig: 0.6180, highlight: false },
+        { name: "Pretrained MiniLM Cosine Similarity Only (A1)", val: 0.5960, test: 0.5973, jd_test: 0.6415, test_orig: 0.6177, highlight: false }
+      ]
+    };
+
+    function renderPerfTable(metric) {
+      document.getElementById("btn-metric-f1").className = metric === "f1"
+        ? "px-2.5 py-1 text-xs font-semibold rounded bg-[var(--primary)] text-[var(--primary-foreground)]"
+        : "px-2.5 py-1 text-xs font-semibold rounded bg-[var(--background)] border border-[var(--border)]";
+      document.getElementById("btn-metric-acc").className = metric === "acc"
+        ? "px-2.5 py-1 text-xs font-semibold rounded bg-[var(--primary)] text-[var(--primary-foreground)]"
+        : "px-2.5 py-1 text-xs font-semibold rounded bg-[var(--background)] border border-[var(--border)]";
+
+      const rows = PERF_DATA[metric];
+      document.getElementById("perf-bars").innerHTML = rows.map(r => `
+        <div class="p-3 rounded-lg bg-[var(--background)] border ${r.highlight ? 'border-[var(--primary)]' : 'border-[var(--card-border)]'} space-y-2">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold">${r.name}</span>
+            <span class="font-mono text-[var(--muted-foreground)]">val: ${r.val.toFixed(4)} | test_orig: ${r.test_orig.toFixed(4)}</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
+            <div>
+              <div class="flex justify-between mb-1">
+                <span>test (Unseen Resumes):</span>
+                <span class="font-bold text-[var(--success)]">${r.test.toFixed(4)}</span>
+              </div>
+              <div class="w-full h-2 bg-[var(--card)] rounded-full overflow-hidden">
+                <div class="h-full bg-[var(--success)]" style="width: ${(r.test * 100).toFixed(1)}%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between mb-1">
+                <span>jd_test (Unseen Jobs):</span>
+                <span class="font-bold text-[var(--primary)]">${r.jd_test.toFixed(4)}</span>
+              </div>
+              <div class="w-full h-2 bg-[var(--card)] rounded-full overflow-hidden">
+                <div class="h-full bg-[var(--primary)]" style="width: ${(r.jd_test * 100).toFixed(1)}%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    const CM_DATA = {
+      test: {
+        matrix: [
+          [0.90, 0.09, 0.01],
+          [0.15, 0.72, 0.13],
+          [0.01, 0.30, 0.69]
+        ],
+        twoClassErr: "0.56%",
+        classes: [
+          { name: "No Fit", p: "0.9593", r: "0.9020", f1: "0.9298", sup: "5,467" },
+          { name: "Potential Fit", p: "0.5793", r: "0.7221", f1: "0.6429", sup: "1,346" },
+          { name: "Good Fit", p: "0.6965", r: "0.6914", f1: "0.6939", sup: "687" }
+        ]
+      },
+      jd_test: {
+        matrix: [
+          [0.86, 0.14, 0.01],
+          [0.17, 0.75, 0.08],
+          [0.04, 0.60, 0.36]
+        ],
+        twoClassErr: "0.67%",
+        classes: [
+          { name: "No Fit", p: "0.9520", r: "0.8573", f1: "0.9022", sup: "6,407" },
+          { name: "Potential Fit", p: "0.5235", r: "0.7529", f1: "0.6176", sup: "1,570" },
+          { name: "Good Fit", p: "0.4181", r: "0.3550", f1: "0.3840", sup: "338" }
+        ]
+      }
+    };
+
+    function renderConfusion(split) {
+      document.getElementById("btn-cm-test").className = split === "test"
+        ? "px-2.5 py-1 text-xs font-semibold rounded bg-[var(--primary)] text-[var(--primary-foreground)]"
+        : "px-2.5 py-1 text-xs font-semibold rounded bg-[var(--background)] border border-[var(--border)]";
+      document.getElementById("btn-cm-jd").className = split === "jd_test"
+        ? "px-2.5 py-1 text-xs font-semibold rounded bg-[var(--primary)] text-[var(--primary-foreground)]"
+        : "px-2.5 py-1 text-xs font-semibold rounded bg-[var(--background)] border border-[var(--border)]";
+
+      const d = CM_DATA[split];
+      const labs = ["No Fit", "Potential Fit", "Good Fit"];
+      let html = `
+        <div class="text-xs text-[var(--muted-foreground)] mb-2 flex justify-between">
+          <span>Rows = True Label · Columns = Predicted (Row-Normalised)</span>
+          <span class="font-mono text-[var(--success)]">2-Class Error: ${d.twoClassErr}</span>
+        </div>
+        <div class="grid grid-cols-4 gap-1.5 text-center text-xs font-mono">
+          <div></div>
+          ${labs.map(l => `<div class="font-bold text-[var(--muted-foreground)] py-1">Pred<br/>${l}</div>`).join("")}
+      `;
+      for (let i = 0; i < 3; i++) {
+        html += `<div class="font-bold text-[var(--muted-foreground)] flex items-center justify-end pr-2">True ${labs[i]}</div>`;
+        for (let j = 0; j < 3; j++) {
+          const val = d.matrix[i][j];
+          const isDiag = i === j;
+          const isGross = Math.abs(i - j) === 2;
+          const bg = isDiag ? "bg-[var(--primary)] text-[var(--primary-foreground)] font-bold" :
+                     isGross ? "bg-[var(--background)] border border-[var(--error)] text-[var(--error)]" :
+                     "bg-[var(--background)] border border-[var(--card-border)]";
+          html += `<div class="py-3 rounded-lg ${bg}">${val.toFixed(2)}</div>`;
+        }
+      }
+      html += `</div>`;
+      document.getElementById("cm-grid").innerHTML = html;
+
+      document.getElementById("per-class-table").innerHTML = `
+        <table class="w-full text-xs font-mono border-collapse">
+          <thead>
+            <tr class="border-b border-[var(--border)] text-[var(--muted-foreground)] text-left">
+              <th class="py-1">Class</th>
+              <th class="py-1 text-right">Precision</th>
+              <th class="py-1 text-right">Recall</th>
+              <th class="py-1 text-right">F1-Score</th>
+              <th class="py-1 text-right">Support</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[var(--card-border)]">
+            ${d.classes.map(c => `
+              <tr>
+                <td class="py-1 font-bold">${c.name}</td>
+                <td class="py-1 text-right">${c.p}</td>
+                <td class="py-1 text-right">${c.r}</td>
+                <td class="py-1 text-right font-bold">${c.f1}</td>
+                <td class="py-1 text-right text-[var(--muted-foreground)]">${c.sup}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    // =========================================================================
+    // 3. TAB SWITCHER
+    // =========================================================================
+    function switchTab(tabId) {
+      const tabs = ["sim", "splits", "perf", "fairness", "arch"];
+      for (const t of tabs) {
+        document.getElementById(`tab-${t}`).classList.toggle("hidden", t !== tabId);
+        const btn = document.getElementById(`tab-btn-${t}`);
+        if (t === tabId) {
+          btn.className = "px-3.5 py-2 rounded-lg text-xs font-semibold transition bg-[var(--primary)] text-[var(--primary-foreground)]";
+        } else {
+          btn.className = "px-3.5 py-2 rounded-lg text-xs font-semibold transition bg-[var(--card)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]";
+        }
+      }
+    }
+
+    // Initialize default view
+    loadPreset("python_good");
+    renderPerfTable("f1");
+    renderConfusion("test");
+  </script>
+</body>
+</html>

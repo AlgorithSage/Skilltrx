@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: "Plus Jakarta Sans", "DM Sans", system-ui, -apple-system, sans-serif;
+  background-color: #F5EFE6;
+  color: #2C1E16;
+  letter-spacing: -0.011em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Editorial serif for brand & main section headings */
+.font-display {
+  font-family: "Fraunces", Georgia, serif;
+  letter-spacing: -0.02em;
+}
+
+/* Crisp geometric tabular numbers for scores, percentages & data tables */
+.num, table, td, th {
+  font-family: "DM Sans", "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1, "zero" 0;
+  letter-spacing: -0.015em;
+}
+
+/* Warm beige & dark-brown scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #EFE7DA;
+}
+::-webkit-scrollbar-thumb {
+  background: #C4B29F;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #8B6F56;
+}
